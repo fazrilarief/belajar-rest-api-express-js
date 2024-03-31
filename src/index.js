@@ -1,10 +1,10 @@
 const express = require("express"); // Inisialisasi express
-const app = express(); // panggil method express ke variabel app
 const dotenv = require("dotenv"); // inisialisasi dotenv
+
+const app = express(); // panggil method express ke variabel app
+
 dotenv.config(); // agar bisa membaca config di file .env
 
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
 const PORT = process.env.PORT; // membaca configurasi port di .env
 
 app.use(express.json()); // gunakan use ini agar bida membaca body dalam bentuk json, untuk proses create
@@ -25,96 +25,9 @@ app.get("/", async (req, res) => {
 
 /* CRUD */
 
-// GET ALL PRODUCT DATA
-app.get("/products", async (request, response) => {
-  const products = await prisma.product.findMany();
-  response.send(products);
-});
+const productController = require("./product/product.controllers");
 
-// GET SPESIFIC PRODUCT DATA
-app.get("/products/:id", async (req, res) => {
-  const productId = req.params.id;
+app.use("/products", productController);
 
-  const products = await prisma.product.findUnique({
-    where: {
-      id: parseInt(productId),
-    },
-  });
-
-  if (!products) {
-    return res.status(400).send({
-      message: "Product not found!",
-    });
-  }
-
-  res.send(products);
-});
-
-// CREATE PRODUCT DATA
-app.post("/products", async (req, res) => {
-  const newProductData = req.body; // inisialisasi body agar bisa input data
-
-  // buat variabel baru untuk menampung inputan ke dalam objek
-  const product = await prisma.product.create({
-    data: {
-      name: newProductData.name,
-      price: newProductData.price,
-      description: newProductData.description,
-      image: newProductData.image,
-    },
-  });
-  // ini buat run variabel tampungan data dan memberikan message sesuai dengan http request code
-  res.status(201).json({
-    data: product,
-    message: "Create product successed",
-  });
-});
-
-// DELETE PRODUCT DATA
-app.delete("/products/:id", async (req, res) => {
-  const productId = req.params.id; // get id produk dulu dari endpoint
-
-  await prisma.product.delete({
-    where: {
-      id: parseInt(productId), // diubah jadi integer dulu, karena params.id defaultnya adalah string
-    },
-  });
-
-  res.send("Product deleted");
-});
-
-// UPDATE PRODUCT DATA
-app.put("/products/:id", async (req, res) => {
-  const productId = req.params.id; // get id produk dari param url
-  const productData = req.body;
-
-  if (
-    !(
-      productData.name &&
-      productData.price &&
-      productData.description &&
-      productData.image
-    )
-  ) {
-    return res.status(400).send("some fields are missing");
-  }
-
-  const product = await prisma.product.update({
-    where: {
-      id: parseInt(productId),
-    },
-    data: {
-      name: productData.name,
-      price: productData.price,
-      description: productData.description,
-      image: productData.image,
-    },
-  });
-
-  res.status(200).json({
-    data: product,
-    message: "Product updated!",
-  });
-});
-
+// Error Handling
 app.use(handleErrorRoutes);
